@@ -1,4 +1,4 @@
-package edu.uci.ics.crawler4j.examples;
+package com.seospider.seospider;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.palantir.docker.compose.DockerComposeRule;
