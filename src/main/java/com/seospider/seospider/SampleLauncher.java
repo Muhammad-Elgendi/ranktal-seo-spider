@@ -10,6 +10,9 @@ import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
 import org.flywaydb.core.Flyway;
 
+
+import java.net.URL;
+
 public class SampleLauncher {
 
     public static String mainUrl;
@@ -17,13 +20,15 @@ public class SampleLauncher {
     public static void main(String[] args) throws Exception {
 
         String crawlStorageFolder = Files.createTempDir().getAbsolutePath();
+        URL url = new URL(args[0]);
+        String host = url.getHost();
         int numberOfCrawlers = Integer.valueOf(args[2]);
 
         CrawlConfig config = new CrawlConfig();
 
         config.setPolitenessDelay(100);
 
-        config.setCrawlStorageFolder(crawlStorageFolder);
+        config.setCrawlStorageFolder("/media/muhammad/disk/crawlerData/");
 
         config.setMaxPagesToFetch(Integer.valueOf(args[0]));
 
