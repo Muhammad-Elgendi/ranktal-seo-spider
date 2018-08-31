@@ -53,6 +53,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>java-dotenv</artifactId>
+            <version>3.1.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.github.s3curitybug</groupId>
             <artifactId>similarity-uniform-fuzzy-hash</artifactId>
             <version>LATEST</version>

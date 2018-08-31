@@ -1,5 +1,6 @@
 package com.seospider.seospider;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,16 +68,18 @@ public class SampleLauncher {
          */
         controller.addSeed(args[0]);
 
+        Dotenv dotenv = Dotenv.load();
+
         Flyway flyway = new Flyway();
-        flyway.setDataSource(args[1], "crawler4j", "crawler4j");
+        flyway.setDataSource(args[1], dotenv.get("DB_USER_NAME"), dotenv.get("DB_PASSWORD"));
         flyway.migrate();
 
 
         ComboPooledDataSource pool = new ComboPooledDataSource();
         pool.setDriverClass("org.postgresql.Driver");
-        pool.setJdbcUrl(args[1]);
-        pool.setUser("crawler4j");
-        pool.setPassword("crawler4j");
+        pool.setJdbcUrl(dotenv.get("JDBC_URL"));
+        pool.setUser(dotenv.get("DB_USER_NAME"));
+        pool.setPassword(dotenv.get("DB_PASSWORD"));
         pool.setMaxPoolSize(numberOfCrawlers);
         pool.setMinPoolSize(numberOfCrawlers);
         pool.setInitialPoolSize(numberOfCrawlers);

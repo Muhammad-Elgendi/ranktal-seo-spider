@@ -30,14 +30,6 @@ public class PostgresWebCrawler extends WebCrawler {
     private final DBService postgresDBService;
     Map<String, Object> problems;
 
-    //    private ArrayList<String> status3xx;
-//    private ArrayList<String> status4xx;
-//    private ArrayList<String> status5xx;
-//    private ArrayList<String> xRobotsTag;
-//    private ArrayList<String> headerRefreshes;
-//    private ArrayList<String> titles;
-//    private ArrayList<String> description;
-
     public PostgresWebCrawler(DBService postgresDBService) {
         this.postgresDBService = postgresDBService;
     }
@@ -61,17 +53,8 @@ public class PostgresWebCrawler extends WebCrawler {
         // Do nothing by default
         // Sub-classed can override this to add their custom functionality
         problems = new HashMap<>();
-//        status3xx = new ArrayList<String>();
-//        status4xx = new ArrayList<String>();
-//        status5xx = new ArrayList<String>();
-//        xRobotsTag = new ArrayList<String>();
-//        headerRefreshes = new ArrayList<String>();
-//        titles = new ArrayList<String>();
-//        description = new ArrayList<String>();
     }
 
-//    private static ArrayList<String> redirectChain = new ArrayList<String>();
-//    private static ArrayList<String> redirectTo4xx = new ArrayList<String>();
     /**
      * This method receives two parameters. The first parameter is the page in
      * which we have discovered this new url and the second parameter is the new
@@ -90,7 +73,7 @@ public class PostgresWebCrawler extends WebCrawler {
     public boolean shouldVisit(Page referringPage, WebURL url) {
         String href = url.getURL().toLowerCase();
         return !FILTERS.matcher(href).matches()
-                && href.startsWith(SampleLauncher.mainUrl);
+                && href.contains(SampleLauncher.mainUrl);
     }
 
     /**
@@ -101,16 +84,6 @@ public class PostgresWebCrawler extends WebCrawler {
      */
     @Override
     protected void onRedirectedStatusCode(Page page) {
-//        redirectTo4xx.add(0, page.getWebURL().getURL());
-//        redirectTo4xx.add(1, page.getRedirectedToUrl());
-//        if (redirectChain.isEmpty()) {
-//            redirectChain.add(0, page.getWebURL().getURL());
-//            redirectChain.add(1, page.getRedirectedToUrl());
-//        } else if (redirectChain.indexOf(page.getWebURL().getURL()) == 1) {
-//            //redirect chain problem
-//            // URl redirect chain
-//            redirectChain.clear();
-//        }
         int statusCode = page.getStatusCode();
         ArrayList<String> status3xx = new ArrayList<>();
         status3xx.add(0, page.getWebURL().getURL());
@@ -152,9 +125,6 @@ public class PostgresWebCrawler extends WebCrawler {
     @Override
     protected void onUnexpectedStatusCode(String urlStr, int statusCode, String contentType,
                                           String description) {
-//        if (redirectTo4xx.indexOf(urlStr) == 1 && statusCode > 399 && statusCode < 500) {
-//            // Redirect to 4xx problems
-//        }
         if (statusCode > 399 && statusCode < 500) {
             // 4xx problems
             ArrayList<String> status4xx = new ArrayList<>();
@@ -183,18 +153,9 @@ public class PostgresWebCrawler extends WebCrawler {
     @Override
     public void visit(Page page) {
         try {
-//         String url = page.getWebURL().getURL();
-//         System.out.println("URL: " + url);
-
             if (page.getParseData() instanceof HtmlParseData) {
                 HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
                 String html = htmlParseData.getHtml();
-
-                //             Set<WebURL> links = htmlParseData.getOutgoingUrls();
-                //             System.out.println("Text length: " + text.length());
-                //             System.out.println("Html length: " + html.length());
-                //             System.out.println("Number of outgoing links: " + links.size());
-                //                String targetUrl = Controller.mainUrl;
                 problems.put("pageUrl", page.getWebURL().getURL());
                 Header[] headers = page.getFetchResponseHeaders();
                 for (Header header : headers) {
@@ -238,7 +199,6 @@ public class PostgresWebCrawler extends WebCrawler {
                     }
                 }
                 Document doc = Jsoup.parse(html);
-//              Document doc = Jsoup.connect(targetUrl).get();
 
                 Elements titleTags = doc.selectFirst("head").select("title");
                 if (titleTags.isEmpty()) {
@@ -387,7 +347,6 @@ public class PostgresWebCrawler extends WebCrawler {
                 Elements metaRefresh = doc.selectFirst("head").select("meta[http-equiv=refresh]");
                 if (!metaRefresh.isEmpty()) {
                     // Meta Refresh Problem
-
                     ArrayList<String> metaElement = new ArrayList<>();
                     metaElement.add(0, page.getWebURL().getURL());
                     metaElement.add(1, "Meta Refresh");
@@ -400,6 +359,7 @@ public class PostgresWebCrawler extends WebCrawler {
                 // Search how to get load time of the page into visit()
                 //duplicate content problem > 92%
                 //duplicate titles problem
+                // Redirect chain
 //                try {
 //                    postgresDBService.store(page);
 //                } catch (RuntimeException e) {
