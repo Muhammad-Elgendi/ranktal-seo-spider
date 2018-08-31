@@ -71,7 +71,7 @@ public class SampleLauncher {
         Dotenv dotenv = Dotenv.load();
 
         Flyway flyway = new Flyway();
-        flyway.setDataSource(args[1], dotenv.get("DB_USER_NAME"), dotenv.get("DB_PASSWORD"));
+        flyway.setDataSource(dotenv.get("JDBC_URL"), dotenv.get("DB_USER_NAME"), dotenv.get("DB_PASSWORD"));
         flyway.migrate();
 
 
