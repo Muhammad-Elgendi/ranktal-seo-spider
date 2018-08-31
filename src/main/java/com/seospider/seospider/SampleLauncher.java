@@ -1,5 +1,8 @@
 package com.seospider.seospider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.io.Files;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
@@ -16,27 +19,44 @@ import java.net.URL;
 public class SampleLauncher {
 
     public static String mainUrl;
+    private static final Logger logger = LoggerFactory.getLogger(SampleLauncher.class);
 
     public static void main(String[] args) throws Exception {
 
-        String crawlStorageFolder = Files.createTempDir().getAbsolutePath();
+        if (args.length != 2) {
+            logger.info("Needed parameters: ");
+            logger.info("\t Seed URL (start crawling with this URL)");
+            logger.info("\t maxPagesToFetch (number of pages to be fetched)");
+            return;
+        }
+
         URL url = new URL(args[0]);
-        String host = url.getHost();
-        int numberOfCrawlers = Integer.valueOf(args[2]);
+        mainUrl=args[0];
+        int numberOfCrawlers = 31;
+
 
         CrawlConfig config = new CrawlConfig();
 
         config.setPolitenessDelay(100);
 
-        config.setCrawlStorageFolder("/media/muhammad/disk/crawlerData/");
+        config.setCrawlStorageFolder("/media/muhammad/disk/crawlerData/"+url.getHost());
 
-        config.setMaxPagesToFetch(Integer.valueOf(args[0]));
+        config.setMaxPagesToFetch(Integer.valueOf(args[1]));
+
+        config.setRespectNoFollow(false);
+
+        config.setRespectNoIndex(false);
+
+        config.setUserAgentString("SEO-spider (https://github.com/Muhammad-Elgendi/SEO-spider/)");
 
         /*
          * Instantiate the controller for this crawl.
          */
-        PageFetcher pageFetcher = new PageFetcher(config);
         RobotstxtConfig robotstxtConfig = new RobotstxtConfig();
+
+        robotstxtConfig.setUserAgentName("SEO-spider");
+
+        PageFetcher pageFetcher = new PageFetcher(config);
         RobotstxtServer robotstxtServer = new RobotstxtServer(robotstxtConfig, pageFetcher);
         CrawlController controller = new CrawlController(config, pageFetcher, robotstxtServer);
 
@@ -45,12 +65,7 @@ public class SampleLauncher {
          * URLs that are fetched and then the crawler starts following links
          * which are found in these pages
          */
-        controller.addSeed("https://de.wikipedia.org/wiki/Java_Database_Connectivity");
-        controller.addSeed("https://de.wikipedia.org/wiki/Relationale_Datenbank");
-        controller.addSeed("https://pt.wikipedia.org/wiki/JDBC");
-        controller.addSeed("https://pt.wikipedia.org/wiki/Protocolo");
-        controller.addSeed("https://de.wikipedia.org/wiki/Datenbank");
-
+        controller.addSeed(args[0]);
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(args[1], "crawler4j", "crawler4j");

@@ -52,6 +52,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>com.github.s3curitybug</groupId>
+            <artifactId>similarity-uniform-fuzzy-hash</artifactId>
+            <version>LATEST</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>
