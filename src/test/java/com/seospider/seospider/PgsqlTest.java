@@ -37,7 +37,7 @@ public class PgsqlTest {
 
         String maxPagesToFetch = "20";
         String numberOfCrawler = "1";
-        SampleLauncher.main(new String[] {maxPagesToFetch, jdbcurl, numberOfCrawler});
+        SimpleLauncher.main(new String[] {maxPagesToFetch, jdbcurl, numberOfCrawler});
 
         ComboPooledDataSource pool = getTestPool(jdbcurl);
 

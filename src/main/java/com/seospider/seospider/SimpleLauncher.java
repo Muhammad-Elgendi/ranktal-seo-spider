@@ -4,7 +4,6 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.io.Files;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import edu.uci.ics.crawler4j.crawler.CrawlConfig;
 import edu.uci.ics.crawler4j.crawler.CrawlController;
@@ -12,28 +11,34 @@ import com.seospider.seospider.crawler.PostgresCrawlerFactory;
 import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
-import org.flywaydb.core.Flyway;
 
 
 import java.net.URL;
 
-public class SampleLauncher {
+public class SimpleLauncher {
 
-    public static String mainUrl;
-    private static final Logger logger = LoggerFactory.getLogger(SampleLauncher.class);
+    public static  String mainUrl;
+    public static Integer userId;
+    public static Integer siteId;
+    private static final Logger logger = LoggerFactory.getLogger(SimpleLauncher.class);
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 2) {
+        if (args.length != 5) {
             logger.info("Needed parameters: ");
             logger.info("\t Seed URL (start crawling with this URL)");
             logger.info("\t maxPagesToFetch (number of pages to be fetched)");
+            logger.info("\t nuberOfCrawlers (number of crawlers)");
+            logger.info("\t user id (id of user that request the crawling)");
+            logger.info("\t site id (id of site that being crawled)");
             return;
         }
 
         URL url = new URL(args[0]);
-        mainUrl=args[0];
-        int numberOfCrawlers = 31;
+        mainUrl= args[0];
+        userId = Integer.valueOf(args[3]);
+        siteId =Integer.valueOf(args[4]);
+        int numberOfCrawlers = Integer.valueOf(args[2]);
 
 
         CrawlConfig config = new CrawlConfig();
@@ -70,9 +75,9 @@ public class SampleLauncher {
 
         Dotenv dotenv = Dotenv.load();
 
-        Flyway flyway = new Flyway();
-        flyway.setDataSource(dotenv.get("JDBC_URL"), dotenv.get("DB_USER_NAME"), dotenv.get("DB_PASSWORD"));
-        flyway.migrate();
+//        Flyway flyway = new Flyway();
+//        flyway.setDataSource(dotenv.get("JDBC_URL"), dotenv.get("DB_USER_NAME"), dotenv.get("DB_PASSWORD"));
+//        flyway.migrate();
 
 
         ComboPooledDataSource pool = new ComboPooledDataSource();
