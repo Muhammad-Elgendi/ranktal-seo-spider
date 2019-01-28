@@ -5,8 +5,6 @@ import edu.uci.ics.crawler4j.crawler.CrawlController;
 import com.seospider.seospider.db.impl.DBServiceImpl;
 
 
-import java.beans.PropertyVetoException;
-
 /**
  * Created by rz on 03.06.2016.
  */

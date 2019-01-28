@@ -10,11 +10,10 @@ import org.slf4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Map;
+
 import java.util.regex.Pattern;
 import org.apache.http.Header;
-import org.json.JSONObject;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -89,8 +88,22 @@ public class PostgresWebCrawler extends WebCrawler {
 //        status3xx.add(1, page.getRedirectedToUrl());
 //        status3xx.add(2, String.valueOf(statusCode));
 //        problems.put("status3xx", status3xx);
-        postgresDBService.storeUrl(page.getWebURL().getURL(),page.getStatusCode(), SimpleLauncher.siteId);
-        postgresDBService.storeRedirect(page.getWebURL().getURL(),page.getRedirectedToUrl());
+
+        // store url
+        try {
+            postgresDBService.storeUrl(page.getWebURL().getURL(),page.getStatusCode(), SimpleLauncher.siteId);
+        } catch (RuntimeException e) {
+            logger.error("Storing url in onRedirectedStatusCode() failed", e);
+        }
+
+        // store redirect
+        try {
+            postgresDBService.storeRedirect(page.getWebURL().getURL(),page.getRedirectedToUrl());
+        } catch (RuntimeException e) {
+            logger.error("Storing redirect in onRedirectedStatusCode() failed", e);
+        }
+
+
 
 //        if (page.getStatusCode() == 302 || page.getStatusCode() == 303 || page.getStatusCode() == 307) {
 //            /*
@@ -143,7 +156,14 @@ public class PostgresWebCrawler extends WebCrawler {
 //        // print problems map
 //        JSONObject json = new JSONObject(problems);
 //        System.out.printf("JSON: %s", json.toString());
-        postgresDBService.storeUrl(urlStr,statusCode, SimpleLauncher.siteId);
+
+        // store url
+        try {
+            postgresDBService.storeUrl(urlStr,statusCode, SimpleLauncher.siteId);
+        } catch (RuntimeException e) {
+            logger.error("Storing url in onUnexpectedStatusCode() failed", e);
+        }
+
     }
 
     /**
@@ -154,12 +174,20 @@ public class PostgresWebCrawler extends WebCrawler {
      */
     @Override
     public void visit(Page page) {
-        try {
             if (page.getParseData() instanceof HtmlParseData) {
                 HtmlParseData htmlParseData = (HtmlParseData) page.getParseData();
-                String html = htmlParseData.getHtml();
+                Document doc = Jsoup.parse(htmlParseData.getHtml());
 //                problems.put("pageUrl", page.getWebURL().getURL());
-                postgresDBService.storeUrl(page.getWebURL().getURL(),page.getStatusCode(), SimpleLauncher.siteId);
+
+                // store url
+                try {
+                    postgresDBService.storeUrl(page.getWebURL().getURL(),page.getStatusCode(), SimpleLauncher.siteId);
+                } catch (RuntimeException e) {
+                    logger.error("Storing url in vist() failed", e);
+                }
+
+
+
                 Header[] headers = page.getFetchResponseHeaders();
                 for (Header header : headers) {
                     if (header.getName().equals("X-Robots-Tag")) {
@@ -169,7 +197,14 @@ public class PostgresWebCrawler extends WebCrawler {
 //                            xRobotsTagNoindex.add(0, page.getWebURL().getURL());
 //                            xRobotsTagNoindex.add(1, "noindex");
 //                            problems.put("xRobotsTagNoindex", xRobotsTagNoindex);
-                            postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","noindex");
+
+                            // store xrobots
+                            try {
+                                postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","noindex");
+                            } catch (RuntimeException e) {
+                                logger.error("Storing xRobots noindex failed", e);
+                            }
+
                         }
                         if (header.getValue().contains("nofollow")) {
                             // X-Robots-Tag: nofollow problem
@@ -177,7 +212,15 @@ public class PostgresWebCrawler extends WebCrawler {
 //                            xRobotsTagNofollow.add(0, page.getWebURL().getURL());
 //                            xRobotsTagNofollow.add(1, "nofollow");
 //                            problems.put("xRobotsTagNofollow", xRobotsTagNofollow);
-                            postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","nofollow");
+
+                            // store xrobots
+                            try {
+                                postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","nofollow");
+                            } catch (RuntimeException e) {
+                                logger.error("Storing xRobots nofollow failed", e);
+                            }
+
+
                         }
                         if (header.getValue().contains("none")) {
                             // X-Robots-Tag: noindex, nofollow problems
@@ -185,7 +228,15 @@ public class PostgresWebCrawler extends WebCrawler {
 //                            xRobotsTagNone.add(0, page.getWebURL().getURL());
 //                            xRobotsTagNone.add(1, "none");
 //                            problems.put("xRobotsTagNone", xRobotsTagNone);
-                            postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","none");
+
+                            // store xrobots
+                            try {
+                                postgresDBService.storeRobot(page.getWebURL().getURL(),"xRobots","none");
+                            } catch (RuntimeException e) {
+                                logger.error("Storing xRobots none failed", e);
+                            }
+
+
                         }
                     }
                     if (header.getName().equals("Refresh")) {
@@ -201,11 +252,19 @@ public class PostgresWebCrawler extends WebCrawler {
 //                        headerRefreshes.add(1, "Header Refresh");
 //                        headerRefreshes.add(2, header.getValue());
 //                        problems.put("headerRefreshes", headerRefreshes);
-                        postgresDBService.storeRefresh(page.getWebURL().getURL(),"headerRefresh",header.getValue());
+
+                        // store header refresh
+                        try {
+                            postgresDBService.storeRefresh(page.getWebURL().getURL(),"headerRefresh",header.getValue());
+                        } catch (RuntimeException e) {
+                            logger.error("Storing header refresh failed", e);
+                        }
+
+
 
                     }
                 }
-                Document doc = Jsoup.parse(html);
+
 
                 Elements titleTags = doc.selectFirst("head").select("title");
                 if (titleTags.isEmpty()) {
@@ -214,7 +273,15 @@ public class PostgresWebCrawler extends WebCrawler {
 //                    titles.add(0, page.getWebURL().getURL());
 //                    titles.add(1, "Missing Title");
 //                    problems.put("MissingTitle", titles);
-                    postgresDBService.storeTitle(page.getWebURL().getURL(),"");
+
+                    // store title
+                    try {
+                        postgresDBService.storeTitle(page.getWebURL().getURL(),"");
+                    } catch (RuntimeException e) {
+                        logger.error("Storing empty title failed", e);
+                    }
+
+
                 } else {
 
                     if (titleTags.size() > 1) {
@@ -224,12 +291,30 @@ public class PostgresWebCrawler extends WebCrawler {
 //                        titles.add(1, "Multiple Titles");
 //                        problems.put("MultipleTitles", titles);
                         for (Element titleTag : titleTags) {
-                            postgresDBService.storeTitle(page.getWebURL().getURL(),titleTag.text());
+
+                            // store title
+                            try {
+                                postgresDBService.storeTitle(page.getWebURL().getURL(),titleTag.text());
+                            } catch (RuntimeException e) {
+                                logger.error("Storing multiple title failed", e);
+                            }
+
+
                         }
                     }else {
 
                         String title = doc.selectFirst("head").select("title").first().text();
-                        postgresDBService.storeTitle(page.getWebURL().getURL(),title);
+
+
+                        // store title
+                        try {
+                            postgresDBService.storeTitle(page.getWebURL().getURL(),title);
+                        } catch (RuntimeException e) {
+                            logger.error("Storing title failed", e);
+                        }
+
+
+
 //                    int titleLength = title.length();
 //                    problems.put("title", title);
 //                    if (titleLength > 60) {
@@ -263,11 +348,26 @@ public class PostgresWebCrawler extends WebCrawler {
 //                    description.add(0, page.getWebURL().getURL());
 //                    description.add(1, "Missing Description");
 //                    problems.put("MissingDescription", description);
-                    postgresDBService.storeDescription(page.getWebURL().getURL(),"");
+
+                    // store description
+                    try {
+                        postgresDBService.storeDescription(page.getWebURL().getURL(),"");
+                    } catch (RuntimeException e) {
+                        logger.error("Storing empty description failed", e);
+                    }
+
                 } else {
 
                     String description = doc.selectFirst("head").select("description").first().text();
-                    postgresDBService.storeDescription(page.getWebURL().getURL(),description);
+
+                    // store description
+                    try {
+                        postgresDBService.storeDescription(page.getWebURL().getURL(),description);
+                    } catch (RuntimeException e) {
+                        logger.error("Storing description failed", e);
+                    }
+
+
 //                    int descriptionLength = description.length();
 //                    if (descriptionLength > 300) {
 //                        // description too long flag is set
@@ -308,7 +408,15 @@ public class PostgresWebCrawler extends WebCrawler {
 //                            robotsTagNoindex.add(0, page.getWebURL().getURL());
 //                            robotsTagNoindex.add(1, "noindex");
 //                            problems.put("metaTagNoindex", robotsTagNoindex);
-                            postgresDBService.storeRobot(page.getWebURL().getURL(),"metaTag","noindex");
+
+                            // store robot
+                            try {
+                                postgresDBService.storeRobot(page.getWebURL().getURL(),"metaTag","noindex");
+                            } catch (RuntimeException e) {
+                                logger.error("Storing meta tag noindex failed", e);
+                            }
+
+
                         }
                         if (tag.attr("content").contains("nofollow")) {
                             //Meta Nofollow problem
@@ -316,7 +424,14 @@ public class PostgresWebCrawler extends WebCrawler {
 //                            robotsTagNofollow.add(0, page.getWebURL().getURL());
 //                            robotsTagNofollow.add(1, "nofollow");
 //                            problems.put("metaTagNofollow", robotsTagNofollow);
-                            postgresDBService.storeRobot(page.getWebURL().getURL(),"metaTag","nofollow");
+
+                            // store robot
+                            try {
+                                postgresDBService.storeRobot(page.getWebURL().getURL(),"metaTag","nofollow");
+                            } catch (RuntimeException e) {
+                                logger.error("Storing meta tag nofollow failed", e);
+                            }
+
                         }
                     }
                 }
@@ -329,7 +444,14 @@ public class PostgresWebCrawler extends WebCrawler {
 //                    metaElement.add(1, "Meta Refresh");
 //                    metaElement.add(2, metaRefresh.first().attr("content"));
 //                    problems.put("MetaRefresh", metaElement);
-                    postgresDBService.storeRefresh(page.getWebURL().getURL(),"MetaRefresh",metaRefresh.first().attr("content"));
+
+                    // store refresh
+                    try {
+                        postgresDBService.storeRefresh(page.getWebURL().getURL(),"MetaRefresh",metaRefresh.first().attr("content"));
+                    } catch (RuntimeException e) {
+                        logger.error("Storing meta refresh failed", e);
+                    }
+
                 }
 
                 boolean isH1Exit =true;
@@ -358,9 +480,17 @@ public class PostgresWebCrawler extends WebCrawler {
 //                    problems.put("Thin Content", content);
 //                }
 
-                URL url = new URL(page.getWebURL().getURL());
+                String urlQuery = "";
 
-                String urlQuery = url.getQuery();
+                try {
+                    URL url = new URL(page.getWebURL().getURL());
+                    urlQuery = url.getQuery();
+                } catch (MalformedURLException ex) {
+                    logger.error("Parsing URL failed", ex);
+                }
+
+
+
 
 //                if (url.getQuery() != null) {
 //                    //Dynamic URL problem
@@ -385,34 +515,39 @@ public class PostgresWebCrawler extends WebCrawler {
                 }
 
                 // calculate hash of the page
+                String hash = Similarities.calculateHash(htmlParseData.getHtml());
 
-
-
-
+                // store content
+                try {
+                    postgresDBService.storeContent(page.getWebURL().getURL(),isH1Exit,isCanonicalExist,urlQuery,contentLength,hash);
+                } catch (RuntimeException e) {
+                    logger.error("Storing content failed", e);
+                }
 
                 // Slow Load Time Problem
                 // Search how to get load time of the page into visit()
                 //duplicate content problem > 92%
                 //duplicate titles problem
                 // Redirect chain
+
 //                try {
 //                    postgresDBService.store(page);
 //                } catch (RuntimeException e) {
 //                    logger.error("Storing failed", e);
 //                }
+
+
 //                // print problems map
 //                JSONObject json = new JSONObject(problems);
 //                System.out.printf("JSON: %s", json.toString());
             }
-        } catch (MalformedURLException ex) {
 
-        }
     }
 
     @Override
     public void onBeforeExit() {
-//        if (postgresDBService != null) {
-//            postgresDBService.close();
-//        }
+        if (postgresDBService != null) {
+            postgresDBService.close();
+        }
     }
 }

@@ -1,8 +1,10 @@
 package com.seospider.seospider.db;
 
+import com.github.s3curitybug.similarityuniformfuzzyhash.UniformFuzzyHash;
 import edu.uci.ics.crawler4j.crawler.Page;
 
-import java.util.ArrayList;
+import java.sql.Timestamp;
+import java.util.Map;
 
 public interface DBService {
 
@@ -15,8 +17,9 @@ public interface DBService {
     void storeDescription(String url,String description);
     void storeContent(String url,Boolean isH1Exist,Boolean isCanonicalExist,String urlQuery,Integer contentLength,String contentHash);
     void storeSimilarity(String srcUrl,String destUrl,Float percent);
-    ArrayList<String> getHashes(String host);
-    void removeSite(Integer id);
+    Map<String,String> getHashes(String host);
+    void updateJob(String status, Timestamp finishTime, Integer siteId);
+    void removeSite(String url);
     Integer getSite(String host,Integer user_id);
     void close();
 }

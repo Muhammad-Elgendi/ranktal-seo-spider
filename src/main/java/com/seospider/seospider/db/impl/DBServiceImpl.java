@@ -1,5 +1,6 @@
 package com.seospider.seospider.db.impl;
 
+import com.github.s3curitybug.similarityuniformfuzzyhash.UniformFuzzyHash;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import edu.uci.ics.crawler4j.crawler.Page;
 import com.seospider.seospider.db.DBService;
@@ -8,6 +9,8 @@ import org.slf4j.Logger;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DBServiceImpl implements DBService {
 
@@ -17,7 +20,7 @@ public class DBServiceImpl implements DBService {
 
     private PreparedStatement insertPageStatement,insertUrlStatement,insertTitleStatement,insertRedirectStatement,
             insertRobotStatement,insertRefreshStatement,insertDescriptionStatement,insertContentStatement,
-            insertSimilarityStatement,getHashesStatement,removeSiteStatement,getSiteStatement;
+            insertSimilarityStatement,getHashesStatement,removeSiteStatement,getSiteStatement,updateJobStatement;
 
     public DBServiceImpl(ComboPooledDataSource comboPooledDataSource) throws SQLException {
         this.comboPooledDataSource = comboPooledDataSource;
@@ -48,11 +51,14 @@ public class DBServiceImpl implements DBService {
         insertSimilarityStatement =  comboPooledDataSource.getConnection().prepareStatement("insert into similarities values " +
                 "(?,?,?)");
 
-        getHashesStatement =  comboPooledDataSource.getConnection().prepareStatement("select content_hash from contents where url like %?%");
+        getHashesStatement =  comboPooledDataSource.getConnection().prepareStatement("select url,content_hash from contents where url like %?%");
 
-        removeSiteStatement =  comboPooledDataSource.getConnection().prepareStatement("delete from sites where id = ?");
+        removeSiteStatement =  comboPooledDataSource.getConnection().prepareStatement("delete from urls where url like %?%");
 
         getSiteStatement =  comboPooledDataSource.getConnection().prepareStatement("select id from sites where host = ? and user_id = ?");
+
+        updateJobStatement = comboPooledDataSource.getConnection().prepareStatement("update crawling_jobs set status = ? , finished_at = ? where site_id = ?");
+
     }
 
     @Override
@@ -179,14 +185,14 @@ public class DBServiceImpl implements DBService {
     }
 
     @Override
-    public ArrayList<String> getHashes(String host) {
-        ArrayList<String> hashes = new ArrayList<>();
+    public Map<String,String> getHashes(String host) {
+        Map<String,String> hashes = new HashMap<>();
+
          try {
             getHashesStatement.setString(1,host);
             ResultSet rs = getHashesStatement.executeQuery();
             while (rs.next()) {
-                String hash = rs.getString("content_hash");
-                hashes.add(hash);
+                hashes.put(rs.getString("url"),rs.getString("content_hash"));
             }
         } catch (SQLException e) {
             logger.error("SQL Exception while getting hashes", e);
@@ -205,12 +211,12 @@ public class DBServiceImpl implements DBService {
     }
 
     @Override
-    public void removeSite(Integer id) {
+    public void removeSite(String url) {
         try {
-            removeSiteStatement.setInt(1,id);
+            removeSiteStatement.setString(1,url);
             removeSiteStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.error("SQL Exception while removing site", e);
+            logger.error("SQL Exception while removing old urls of the site", e);
             throw new RuntimeException(e);
         }
     }
@@ -237,6 +243,19 @@ public class DBServiceImpl implements DBService {
             }
         }
         return id;
+    }
+
+    @Override
+    public void updateJob(String status,Timestamp finishTime,Integer siteId) {
+        try {
+            updateJobStatement.setString(1,status);
+            updateJobStatement.setTimestamp(2,finishTime);
+            updateJobStatement.setInt(3,siteId);
+            updateJobStatement.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("SQL Exception while update job", e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -1,5 +1,11 @@
 package com.seospider.seospider;
 
+
+import com.github.s3curitybug.similarityuniformfuzzyhash.UniformFuzzyHash;
+import com.github.s3curitybug.similarityuniformfuzzyhash.UniformFuzzyHashes;
+import com.seospider.seospider.crawler.Similarities;
+import com.seospider.seospider.db.DBService;
+import com.seospider.seospider.db.impl.DBServiceImpl;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,14 +18,16 @@ import edu.uci.ics.crawler4j.fetcher.PageFetcher;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtConfig;
 import edu.uci.ics.crawler4j.robotstxt.RobotstxtServer;
 
-
 import java.net.URL;
+import java.sql.Timestamp;
+import java.util.Map;
 
 public class SimpleLauncher {
 
     public static  String mainUrl;
     public static Integer userId;
     public static Integer siteId;
+
     private static final Logger logger = LoggerFactory.getLogger(SimpleLauncher.class);
 
     public static void main(String[] args) throws Exception {
@@ -37,9 +45,8 @@ public class SimpleLauncher {
         URL url = new URL(args[0]);
         mainUrl= args[0];
         userId = Integer.valueOf(args[3]);
-        siteId =Integer.valueOf(args[4]);
+        siteId = Integer.valueOf(args[4]);
         int numberOfCrawlers = Integer.valueOf(args[2]);
-
 
         CrawlConfig config = new CrawlConfig();
 
@@ -89,13 +96,55 @@ public class SimpleLauncher {
         pool.setMinPoolSize(numberOfCrawlers);
         pool.setInitialPoolSize(numberOfCrawlers);
 
+
+        /**
+         * Delete all old urls
+         */
+        deleteAllUrls(pool);
+
         /*
          * Start the crawl. This is a blocking operation, meaning that your code
          * will reach the line after this only when crawling is finished.
          */
         controller.start(new PostgresCrawlerFactory(pool), numberOfCrawlers);
 
+        /**
+         * Check Duplicate Content and Store Similarities
+         */
+        checkForDuplicateContent(pool);
+
+        notifyBackend(pool,"Finished",getCurrentTimeStamp());
+
         pool.close();
+
+        /**
+         * Inform backend
+         */
+    }
+
+    private static void checkForDuplicateContent(ComboPooledDataSource pool) throws Exception{
+        DBService postgresDBService = new DBServiceImpl(pool);
+        Map<String,String> hashesStrings = postgresDBService.getHashes(mainUrl);
+        Map<String, UniformFuzzyHash>  map = UniformFuzzyHashes.computeHashesFromStrings(hashesStrings,61);
+        Map similarities= UniformFuzzyHashes.computeAllHashesSimilarities(map);
+        Similarities.saveAllHashesSimilarities(similarities,postgresDBService);
+    }
+
+    private static void notifyBackend(ComboPooledDataSource pool, String status, Timestamp finishTime) throws Exception{
+        DBService postgresDBService = new DBServiceImpl(pool);
+        postgresDBService.updateJob(status,finishTime,siteId);
+    }
+
+
+    private static void deleteAllUrls(ComboPooledDataSource pool) throws Exception{
+        DBService postgresDBService = new DBServiceImpl(pool);
+        postgresDBService.removeSite(mainUrl);
+    }
+
+    private static java.sql.Timestamp getCurrentTimeStamp() {
+
+        return new java.sql.Timestamp(new java.util.Date().getTime());
+
     }
 
 }
